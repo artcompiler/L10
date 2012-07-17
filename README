@@ -1,7 +1,9 @@
 OVERVIEW
 
-L8 is a language with JSON syntax and semantics. It constructs JavaScript values
-from JSON formatted text, and writes JSON formatted text from JavaScript values.
+L10 is a language with SVG syntax and semantics. It parse and renders SVG to and from
+ASTs formatted as JSON. The translation between ASTs and SVG is almost a direct mapping
+of AST tag property to SVG element of that tag name, with attributes given by other
+AST properties.
 
 L8 is written in L0. 
 
@@ -14,23 +16,23 @@ To build:
 
 This produces the file:
 
-   ../bin/l8c.swf
+   ../bin/l10c.swf
 
 
 USING
 
 To run:
 
-    ./comp.sh some.js
+    ./comp.sh some.l9
 
 or
 
-    avmshell ../bin/l8c.swf some.js
+    avmshell ../bin/l10c.swf some.l9
 
 where avmshell is the name of a recent build of Tamarin.
 
 
 This produces the file:
 
-    some.js.js
+    some.l9.l10
 
