@@ -22,6 +22,7 @@
  *
  * Contributor(s):
  *   Adobe AS3 Team
+ *   Jeff Dyer, Art Compiler
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -61,7 +62,7 @@
         print("value[0].tag="+value[0].body)
         let str = json.toString();
 
-        Util::writeStringToFile(str, fname + ".js");
+        Util::writeStringToFile(str, fname + ".l10");
 
         // This is a hack.  The profiler needs to be callback-based; the
         // snapshot is captured so that the profiler won't lose data.

@@ -49,6 +49,6 @@ $BIN/shell $BIN/l0c.swf \
        $DIR/sampler.l0 \
        $DIR/format.l0 \
        $DIR/json.l0 \
-       $DIR/l8c.l0
+       $DIR/l10c.l0
 
-cp ../src/l8c.l0.swf ../bin/l8c.swf
+cp ../src/l10c.l0.swf ../bin/l10c.swf
