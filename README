@@ -1,9 +1,9 @@
 OVERVIEW
 
-L10 is a language with SVG syntax and semantics. It parse and renders SVG to and from
-ASTs formatted as JSON. The translation between ASTs and SVG is almost a direct mapping
-of AST tag property to SVG element of that tag name, with attributes given by other
-AST properties.
+L10 is a language with SVG syntax and semantics. It parse and renders SVG
+to and from ASTs formatted as JSON. The translation between ASTs and SVG is
+almost a direct mapping of AST tag property to SVG element of that tag name,
+with attributes given by other AST properties.
 
 L8 is written in L0. 
 
