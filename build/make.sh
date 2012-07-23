@@ -47,7 +47,7 @@ $BIN/shell $BIN/l0c.swf \
        $DIR/eval-support.l0 \
        $DIR/comp-env.l0 \
        $DIR/sampler.l0 \
-       $DIR/format.l0 \
+       $DIR/render.l0 \
        $DIR/json.l0 \
        $DIR/l10c.l0
 

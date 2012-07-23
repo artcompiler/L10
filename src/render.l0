@@ -1,0 +1,143 @@
+/* -*- mode: javascript; tab-width: 4; indent-tabs-mode: nil -*- */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is [Open Source Virtual Machine.].
+ *
+ * The Initial Developer of the Original Code is
+ * Adobe System Incorporated.
+ * Portions created by the Initial Developer are Copyright (C) 2004-2006
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Adobe AS3 Team
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
+
+class Renderer {
+    use default namespace internal,
+        namespace internal;
+
+    var compact;
+
+    const prefix = [ '<?xml version="1.0" standalone="no"?>'
+                   , '<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" '
+                   , '"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">'
+                   , '<svg viewBox="0 0 1000 400"'
+                   , 'xmlns="http://www.w3.org/2000/svg" version="1.1" >'
+                     , '<text x="10" y="10" font-family="monospace" font-size="25" fill="blue" >'
+                   ].join("\n")
+
+    const suffix = [ '\n</text></svg>'
+                   ].join("\n")
+
+
+    public var root;
+    public function Renderer(root) 
+        : root=root { }
+
+    public function render(node=null) {
+        if (node===null) {
+            let str = ""
+            str += prefix
+            str += render(root)
+            str += suffix
+            return str
+        }
+
+        print("render() node="+node.constructor)
+
+        if (node is Array) {
+            let str = ""
+            for (let i = 0; i < node.length; i++) {
+                str += render(node[i])
+            }
+            //print("Array str="+str+" node.length="+node.length);
+            return str
+        }
+        
+        if (node is String || 
+            node is Number || 
+            node is Boolean || 
+            node is int || 
+            node is uint || 
+            node === null || 
+            node === undefined) {
+            let str = String(node);
+            //print("Primitive str="+str)
+            return str
+        }
+
+        print("render() node.tag="+node.tag)
+
+        let tagName = node.tag
+
+        let attrs = ""
+        for (let name in node) {
+            if (name==="tag" || name==="elts") {
+                continue
+            }
+            attrs += " " + name + "='" + node[name] + "'"
+        }
+
+        let elts = ""
+        for (let i = 0; i < node.elts.length; i++) {
+            elts += render(node.elts[i])
+        }
+
+        return "\n<" + tagName + " " + attrs + ">" + elts + "</" + tagName + ">"
+    }
+
+    function sanitize(s) {
+        let r = "";
+        let i = 0;
+        let l = s.length;
+        outer:
+        while (i < l) {
+            let start = i;
+            while (i < l) {
+                let c = s.charCodeAt(i);
+                if (c < 32 || 
+                    c == Char::BackSlash || 
+                    c == Char::SingleQuote || 
+                    c == Char::DoubleQuote ||
+                    c == Char::UnicodePS ||
+                    c == Char::UnicodeLS) {
+                    r += s.substring(start, i);
+                    s += uescape(c);
+                    i++;
+                    continue outer;
+                }
+                i++;
+            }
+            r += s.substring(start, i);
+        }
+        return r;
+    }
+
+    function uescape(c)
+        "\\u" + (c+0x10000).toString(16).substring(1);
+}
+

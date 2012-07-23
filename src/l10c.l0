@@ -57,12 +57,15 @@
 
         let str = Util::readStringFromFile(fname)
 
+        print("source str="+str);
+
         let json = new Ast::JSON(str);
         let value = json.toValue();
-        print("value[0].tag="+value[0].body)
-        let str = json.toString();
 
-        Util::writeStringToFile(str, fname + ".l10");
+        let str = new Renderer(value).render()
+        print("target str="+str);
+
+        Util::writeStringToFile(str, fname + ".svg");
 
         // This is a hack.  The profiler needs to be callback-based; the
         // snapshot is captured so that the profiler won't lose data.
