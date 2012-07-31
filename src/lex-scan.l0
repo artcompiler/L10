@@ -1357,8 +1357,9 @@ final class Scanner
                     c = unicodeEscape();
                     cachedIndex = curIndex;
                 }
-                else
+                else {
                     Lex::internalError("Illegal escape sequence.");
+                }
             }
             if (!(cachedIndex == start ? Char::isUnicodeIdentifierStart(c) : Char::isUnicodeIdentifierPart(c)))
                 break;

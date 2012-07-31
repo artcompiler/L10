@@ -57,13 +57,13 @@
 
         let str = Util::readStringFromFile(fname)
 
-        print("source str="+str);
+        //print("source str="+str);
 
         let json = new Ast::JSON(str);
         let value = json.toValue();
 
         let str = new Renderer(value).render()
-        print("target str="+str);
+        //print("target str="+str);
 
         Util::writeStringToFile(str, fname + ".svg");
 

@@ -42,44 +42,70 @@ class Renderer {
 
     var compact;
 
-    const prefix = [ '<?xml version="1.0" standalone="no"?>'
-                   , '<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" '
-                   , '"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">'
-                   , '<svg viewBox="0 0 1000 400"'
-                   , 'xmlns="http://www.w3.org/2000/svg" version="1.1" >'
-                     , '<text x="10" y="10" font-family="monospace" font-size="25" fill="blue" >'
-                   ].join("\n")
+    function prefix() {
+        return [ '<?xml version="1.0" standalone="no"?>'
+               , '<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" '
+               , '"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">'
+               , '<svg viewBox="0 0 ' + (xMax+100) + ' ' + (yMax+100) + '"'
+               , 'xmlns="http://www.w3.org/2000/svg" version="1.1" >'
+               , '<text x="1" y="1" font-family="monospace" font-size="25" fill="blue" >'
+               , '<defs>'
+               , '<style type="text/css"><![CDATA['
+               , 'tspan {'
+               , '  fill: red;'
+               , '}'
+               , 'tspan .keyword {'
+               , '  fill: brown;'
+               , '}'
+               , 'tspan .ident, tspan .Identifier, tspan .punc {'
+               , '  fill: black;'
+               , '}'
+               , 'tspan .LiteralBoolean, tspan .LiteralInt {'
+               , '  fill: teal;'
+               , '}'
+               , 'tspan .Fixture > tspan > tspan {'
+               , '  fill: blue;'
+               , '}'
+               , ']]></style>'
+               , '</defs>'
+               ].join("\n")
+    }
 
-    const suffix = [ '\n</text></svg>'
-                   ].join("\n")
+    function suffix() {
+        return [ '\n</text></svg>'
+               ].join("\n")
+    }
 
+    public var root
+    var xMax = 0
+    var yMax = 2000
+    var xOffset = 0
+    var yOffset = 25
 
-    public var root;
     public function Renderer(root) 
-        : root=root { }
+        : root=root { 
+    }
 
     public function render(node=null) {
         if (node===null) {
+            let body = render(root)
             let str = ""
-            str += prefix
-            str += render(root)
-            str += suffix
+            str += prefix()
+            str += body
+            str += suffix()
+
             return str
         }
-
-        print("render() node="+node.constructor)
 
         if (node is Array) {
             let str = ""
             for (let i = 0; i < node.length; i++) {
                 str += render(node[i])
             }
-            //print("Array str="+str+" node.length="+node.length);
             return str
         }
         
-        if (node is String || 
-            node is Number || 
+        if (node is Number || 
             node is Boolean || 
             node is int || 
             node is uint || 
@@ -90,13 +116,36 @@ class Renderer {
             return str
         }
 
-        print("render() node.tag="+node.tag)
+        if (node is String) {
+            let str = sanitize(node);
+            return str
+        }
+
+        //print("render() node.tag="+node.tag)
 
         let tagName = node.tag
 
+        if (yOffset + Number(node.y) > this.yMax) {
+            yOffset = 25-node.y
+            xOffset += 1000
+        }
+
+        if (xOffset + Number(node.x) > this.xMax) {
+            this.xMax = xOffset + Number(node.x) + 1500
+            print("xMax="+xMax)
+        }
+
         let attrs = ""
         for (let name in node) {
-            if (name==="tag" || name==="elts") {
+            if (name=="tag" || name=="elts") {
+                continue
+            }
+            else if (name == "x") {
+                attrs += " x='" + (xOffset + node.x + "'")
+                continue
+            }
+            else if (name == "y") {
+                attrs += " y='" + (yOffset + node.y + "'")
                 continue
             }
             attrs += " " + name + "='" + node[name] + "'"
@@ -119,14 +168,26 @@ class Renderer {
             let start = i;
             while (i < l) {
                 let c = s.charCodeAt(i);
-                if (c < 32 || 
+                if (c < 32 ||
                     c == Char::BackSlash || 
-                    c == Char::SingleQuote || 
-                    c == Char::DoubleQuote ||
+//                    c == Char::SingleQuote || 
+//                    c == Char::DoubleQuote ||
                     c == Char::UnicodePS ||
                     c == Char::UnicodeLS) {
                     r += s.substring(start, i);
-                    s += uescape(c);
+                    r += uescape(c);
+                    i++;
+                    continue outer;
+                }
+                if (c == Char::Ampersand) {
+                    r += s.substring(start, i);
+                    r += "&amp;"
+                    i++;
+                    continue outer;
+                }
+                if (c == Char::LeftAngle) {
+                    r += s.substring(start, i);
+                    r += "&lt;"
                     i++;
                     continue outer;
                 }
