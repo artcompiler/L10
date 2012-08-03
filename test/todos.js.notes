@@ -1,0 +1,6 @@
+{
+    "N10036": {
+        "comments": ["what's  this?", "it's a field"],
+        "uses": ["N10060", "N10065", "N10175"]
+    }
+}
