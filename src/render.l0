@@ -54,109 +54,10 @@ class Renderer {
                , 'xmlns="http://www.w3.org/2000/svg"'
                , 'version="1.1">'
                , '<script xlink:href="jquery.js"></script>'
-               , '<script>'
-               , 'var xBreak = 500'
-               , 'var yBreak = 1000'
-               , 'var yFactor = ' + yFactor
-               , 'var currentNode'
-               , 'var currentLevel = 0'
-               , 'function showNode(evt) {'
-               , '  var node = evt.target'
-               , '  var str = ""'
-               , '  if (node==currentNode) {'
-               , '    currentLevel++'
-               , '  }'
-               , '  else {'
-               , '    currentLevel = 0'
-               , '    currentNode = node'
-               , '  }'
-               , '  var n = 0'
-               , '  while ("class" in node.attributes) {'
-               , '    if (n != currentLevel) {'
-               , '      node = node.parentNode; n++'
-               , '      continue'
-               , '    }'
-               , '    var attrs = node.attributes'
-               , '    var x = Number(attrs.xStart.value)'
-               , '    var y = Number(attrs.yStart.value) - yFactor*0.65'
-               , '    var x2 = Number(attrs.xStop.value)'
-               , '    var y2 = Number(attrs.yStop.value) - yFactor*0.35'
-               , '    drawBorder(x, y, x2, y2)'
-               , '    str += attrs.class.value + " " + x + " " + y +'
-               , '              " " + x2 + " " + y2 + "\\n"'
-               , '    if (n == currentLevel) {'
-               , '      break'
-               , '    }'
-               , '  }'
-               , '  showStatus(node)'
-               , '}'
-               , 'function showStatus(node) {'
-               , '  var attrs = node.attributes'
-               , '  var statusText = Root.getElementById("statusText")'
-               , '  while (statusText.firstChild) statusText.removeChild(statusText.firstChild)'
-               , '  statusText.appendChild(document.createTextNode(attrs.id.value + " " + attrs.class.value))'
-               , '}'
-               , '<![CDATA['
-               , 'var xmlns="http://www.w3.org/2000/svg"'
-               , 'var Root=document.documentElement'
-               , 'function drawBorder(x0, y0, x1, y1){'
-               , '   var b = getBorder(x0, y0, x1, y1)'
-               , '   for (var i = 0; i < b.length; i++) {'
-               , '      x = b[i][0]'
-               , '      y = b[i][1]'
-               , '      w = b[i][2]'
-               , '      h = b[i][3]'
-               , '      var R=document.createElementNS(xmlns,"rect")'
-               , '      R.setAttributeNS(null,"width",w)'
-               , '      R.setAttributeNS(null,"height",h)'
-               , '      R.setAttributeNS(null,"x",x)'
-               , '      R.setAttributeNS(null,"y",y)'
-               , '      R.setAttributeNS(null,"stroke","black")'
-               , '      R.setAttributeNS(null,"fill", "yellow")'
-               , '      R.setAttributeNS(null,"stroke-opacity", "0.0")'
-               , '      R.setAttributeNS(null,"fill-opacity", "0.2")'
-               , '      Root.removeChild(Root.firstChild)'
-               , '      Root.insertBefore(R, Root.firstChild)'
-               , '   }'
-               , '}'
-               , 'function getBorder(x0, y0, x1, y1) {'
-               , '   var b = [ ]'
-               , '   if (Math.floor((x1-1)/xBreak) - Math.floor((x0)/xBreak) > 0) {'
-               , '       b.push([x0, y0, xBreak - x0 % xBreak, yBreak - y0])'
-               , '       b.push([Math.floor(x1/xBreak)*xBreak, 0, xBreak, y1])'
-               , '       if (Math.floor(x1/xBreak) - Math.floor(x0/xBreak) > 2) {'
-               , '           b.push([x0+xBreak-x0%xBreak, 0, Math.floor(x1/xBreak)*xBreak-(x0+xBreak-x0%xBreak), yBreak])'
-               , '       }'
-               , '   }'
-               , '   else {'
-               , '       b.push([x0, y0, x1-x0, y1-y0])'
-               , '   }'
-               , '   return b'
-               , '}'
-               , 'function init(node) {'
-               , '   $.getJSON("todos.js.notes", function(data) {'
-               , '      for (var p in data) {'
-               , '         drawDot(Root.getElementById(p))'
-               , '         for each (var use in data[p].uses) {'
-               , '             drawDot(Root.getElementById(use))'
-               , '         }'
-               , '      }'
-               , '   })'
-               , '}'
-               , 'function drawDot(node) {'
-               , '   var attrs = node.attributes'
-               , '   var dot = document.createElementNS(xmlns, "circle")'
-               , '   dot.setAttributeNS(null, "cx", attrs.xStart.value)'
-               , '   dot.setAttributeNS(null, "cy", attrs.yStart.value)'
-               , '   dot.setAttributeNS(null, "r", "10")'
-               , '   dot.setAttributeNS(null,"fill", "red")'
-               , '   dot.setAttributeNS(null,"fill-opacity", "0.99")'
-               , '   Root.appendChild(dot)'
-               , '}'
-               , ']]>'
-               , '</script>'
+               , '<script xlink:href="d3.v2.js"></script>'
+               , '<script xlink:href="l10.js"></script>'
                , '<text id="statusText" x="10" y="1090" font-family="monospace" font-size="20" fill="blue">hello, world</text>'
-               , '<text x="10" y="1" font-family="monospace" font-size="10" fill="blue" onclick="showNode(evt)" onmouseover="showStatus(evt.target)">'
+               , '<text font-family="monospace" font-size="10" fill="blue" onclick="selectNode(evt.target)" onmouseover="showStatus(evt.target)">'
                , '<defs>'
                , '<style type="text/css"><![CDATA['
                , 'tspan {'
@@ -197,7 +98,7 @@ class Renderer {
     var numBreaks
     function getOffsetPos(x, y) {
         numBreaks = Math.floor(y/yBreak)
-        return [x + xBreak * numBreaks, yFactor + y % yBreak]
+        return [x + xBreak * numBreaks, y % yBreak + yFactor]  // offset one line down
     }
 
     public function render(node=null) {
@@ -238,14 +139,8 @@ class Renderer {
 
         let tagName = node.tag
 
-        let [xStart, yStart] = getOffsetPos(xFactor*(node.startCol), yFactor*(node.startLn))
-        let [xStop, yStop] = getOffsetPos(xFactor*(node.stopCol), yFactor*(node.stopLn))
-
-        yStop += xFactor
-        if (yStop - yStart > xFactor) {
-            xStart = Math.floor(xStart / xBreak) * xBreak
-            xStop = Math.floor(xStop / xBreak + 1) * xBreak
-        }
+        let [xStart, yStart] = getOffsetPos(xFactor*(node.startCol-1), yFactor*(node.startLn-1))
+        let [xStop, yStop] = getOffsetPos(xFactor*(node.stopCol-1), yFactor*(node.stopLn-1))
 
         let attrs = ""
         for (let name in node) {
