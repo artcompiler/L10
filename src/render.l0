@@ -43,7 +43,7 @@ class Renderer {
     var compact;
 
     function prefix() {
-        let xMax = xBreak * (numBreaks+1)
+        let xMax = xBreak * (maxBreaks+1)
         let yMax = yBreak
         return [ '<?xml version="1.0" standalone="no"?>'
                , '<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" '
@@ -52,12 +52,8 @@ class Renderer {
                , 'onload="init(this)" '
                , 'xmlns:xlink="http://www.w3.org/1999/xlink"'
                , 'xmlns="http://www.w3.org/2000/svg"'
+               , 'font-family="monospace" font-size="10" fill="blue" onclick="selectNode(evt.target)" onmouseover="showStatus(evt.target)">'
                , 'version="1.1">'
-               , '<script xlink:href="jquery.js"></script>'
-               , '<script xlink:href="d3.v2.js"></script>'
-               , '<script xlink:href="l10.js"></script>'
-               , '<text id="statusText" x="10" y="1090" font-family="monospace" font-size="20" fill="blue">hello, world</text>'
-               , '<text font-family="monospace" font-size="10" fill="blue" onclick="selectNode(evt.target)" onmouseover="showStatus(evt.target)">'
                , '<defs>'
                , '<style type="text/css"><![CDATA['
                , 'tspan {'
@@ -77,17 +73,21 @@ class Renderer {
                , '}'
                , ']]></style>'
                , '</defs>'
+               , '<script xlink:href="jquery.js"></script>'
+               , '<script xlink:href="d3.v2.js"></script>'
+               , '<script xlink:href="l10.js"></script>'
+               , '<text id="statusText" x="10" y="1090" font-family="monospace" font-size="20" fill="blue">hello, world</text>'
                ].join("\n")
     }
 
     function suffix() {
-        return [ '\n</text></svg>'
+        return [ '\n</svg>'
                ].join("\n")
     }
 
     public var root
     const xFactor = 6
-    const yFactor = 10
+    const yFactor = 13
 
     public function Renderer(root) 
         : root=root { 
@@ -95,13 +95,20 @@ class Renderer {
 
     const xBreak = 500
     const yBreak = 1000
-    var numBreaks
-    function getOffsetPos(x, y) {
+    var numBreaks = 0
+    var maxBreaks = 0
+    function getOffsetPos(col, ln) {
+        x = xFactor*(col-1)
+        y = yFactor*(ln-1)
         numBreaks = Math.floor(y/yBreak)
-        return [x + xBreak * numBreaks, y % yBreak + yFactor]  // offset one line down
+        maxBreaks = numBreaks > maxBreaks ? numBreaks : maxBreaks
+        return [x + xBreak * numBreaks, y % yBreak + yFactor]  // adjust y to above line
     }
 
+    var pool = { }   // map from node id to node
+
     public function render(node=null) {
+
         if (node===null) {
             let body = render(root)
             let str = ""
@@ -137,10 +144,14 @@ class Renderer {
 
         //print("render() node.tag="+node.tag)
 
+        if (pool[node.id] === void 0) {
+            pool[node.id] = node
+        }
+
         let tagName = node.tag
 
-        let [xStart, yStart] = getOffsetPos(xFactor*(node.startCol-1), yFactor*(node.startLn-1))
-        let [xStop, yStop] = getOffsetPos(xFactor*(node.stopCol-1), yFactor*(node.stopLn-1))
+        let [xStart, yStart] = getOffsetPos(node.startCol, node.startLn)
+        let [xStop, yStop] = getOffsetPos(node.stopCol, node.stopLn)
 
         let attrs = ""
         for (let name in node) {
@@ -165,17 +176,79 @@ class Renderer {
                 attrs += " yStop='" + yStop + "'"
                 continue
             }
+            else if (tagName === "path" && name === "d") {
+                attrs += " d='" + path(node[name]) + "'"
+                continue
+            }
+            print("render() node.tag="+node.tag+" name="+name)
             attrs += " " + name + "='" + node[name] + "'"
         }
 
         print("attrs="+attrs)
 
         let elts = ""
-        for (let i = 0; i < node.elts.length; i++) {
-            elts += render(node.elts[i])
+        if (node.elts) {
+            for (let i = 0; i < node.elts.length; i++) {
+                elts += render(node.elts[i])
+            }
         }
-
         return "\n<" + tagName + " " + attrs + ">" + elts + "</" + tagName + ">"
+    }
+
+    function getStartCoords(id) {
+        let dest = pool[id]
+        print("getStartCoords() id="+id)
+        return [dest.startCol, dest.startLn]
+    }
+
+    function controlPoint(x0, y0, x1, y1) {
+        let xMax = 500
+        let yMax = 1000
+        let head = y0 < y1 ? y0 : y1
+        let foot = y0 > y1 ? y0 : y1
+        let left = x0 < x1 ? x0 : x1
+        let right = x0 > x1 ? x0 : x1
+        // keep control point y between -500 and + 1500
+        let xRange = right - left
+        let yRange = head + 500 < 1500 - foot ? -(head + 500) : 1500 - foot
+        let xDelta = Math.abs(x1-x0)
+        let yDelta = Math.abs(y1-y0)
+        // scale range by xDelta
+        let y = yRange * (xRange < yMax ? xRange / yMax : 1)
+        let x = xRange / 2
+
+        return [left+x, y+(y1-y0)/2]
+    }
+
+
+    function path(list) {
+        let p = [ ]
+        for (let i = 0; i < list.length; i++) {
+            if (list[i] === "M" || list[i] === "L") {
+                p.push(list[i])
+                print("path() list[i+1]="+list[i+1])
+                col = list[++i]
+                ln = list[++i]
+                var [x0, y0] = getOffsetPos(col, ln)
+                p.push(x0)
+                p.push(y0-yFactor*0.5)
+            }
+            else
+            if (list[i] is String && list[i].charAt(0) === "N") {
+                let [col, ln] = getStartCoords(list[i])
+                var [x1, y1] = getOffsetPos(col, ln)
+                p.push("Q")
+                let [x, y] = controlPoint(x0, y0, x1, y1)
+                p.push(x)
+                p.push(y)
+                p.push(x1)
+                p.push(y1-yFactor*0.5)
+            }
+            else {
+                throw "unhandled path command: " + list[i]
+            }
+        }
+        return p.join(" ")
     }
 
     function sanitize(s) {

@@ -2,7 +2,7 @@
 
 var xBreak = 500
 var yBreak = 1000
-var yFactor = 10
+var yFactor = 13
 var currentNode
 var currentLevel = 0
 var xmlns="http://www.w3.org/2000/svg"
@@ -35,6 +35,7 @@ function selectNode(target) {
       target = target.parentNode; n++
       continue
     }
+    drawEdges(target)
     drawBorder(target)
     showStatus(target)
     if (n == currentLevel) {
@@ -42,6 +43,17 @@ function selectNode(target) {
     }
   }
 }
+
+function drawEdges(target) {
+    var node = d3.select(target)
+    var edges = d3.selectAll("path[id*="+node.attr("id")+"]")
+    edges.attr("stroke", "lime ")
+    edges.attr("stroke-width", "3")
+    node.selectAll("*").each(function (v, i, j) { 
+	drawEdges(this)
+    })
+}
+
 
 function drawBorder(target){
     var node = d3.select(target)
@@ -77,25 +89,25 @@ function drawBorder(target){
     var area = d3.svg.area()
 	.x(function(d) { return d.x })
 	.y0(function(d) {
-	    if (d.x < x0) {
-		return y0
+	    if (d.x <= x0) {
+		return y0 + yFactor*0.3
 	    }
 	    else if (Math.floor(d.x/xBreak) > Math.floor(x0/xBreak)) {
 		return 0
 	    }
 	    else {
-		return y0 - yFactor
+		return y0 - yFactor*0.7
 	    }
 	})
 	.y1(function(d) {
 	    if (Math.floor(d.x/xBreak) < Math.floor(x1/xBreak)) {
-		return yBreak
+		return yBreak + yFactor*0.5
 	    }
 	    if (d.x > x1) {
 		return y1 - yFactor
 	    }
 	    else {
-		return y1
+		return y1 + yFactor*0.5
 	    }
 	})
 
@@ -107,24 +119,12 @@ function drawBorder(target){
     // insert path with shape derived from svg associated data
     svg.insert("path", ":first-child")
 	.attr("d", area)
-	.style("fill", "yellow")
-	.style("fill-opacity", "0.5")
+	.style("fill", "steelblue")
+	.style("fill-opacity", "0.2")
 
-}
 
-function getBorder(x0, y0, x1, y1) {
-   var b = [ ]
-   if (Math.floor((x1-1)/xBreak) - Math.floor((x0)/xBreak) > 0) {
-       b.push([x0, y0, xBreak - x0 % xBreak, yBreak - y0])
-       b.push([Math.floor(x1/xBreak)*xBreak, 0, xBreak, y1])
-       if (Math.floor(x1/xBreak) - Math.floor(x0/xBreak) > 2) {
-           b.push([x0+xBreak-x0%xBreak, 0, Math.floor(x1/xBreak)*xBreak-(x0+xBreak-x0%xBreak), yBreak])
-       }
-   }
-   else {
-       b.push([x0, y0, x1-x0, y1-y0])
-   }
-   return b
+    drawDot(target)
+
 }
 
 function init(node) {
@@ -132,14 +132,20 @@ function init(node) {
     })
 }
 
-function drawDot(node) {
-   var attrs = node.attributes
-   var dot = document.createElementNS(xmlns, "circle")
-   dot.setAttributeNS(null, "cx", attrs.xStart.value)
-   dot.setAttributeNS(null, "cy", attrs.yStart.value)
-   dot.setAttributeNS(null, "r", "10")
-   dot.setAttributeNS(null,"fill", "red")
-   dot.setAttributeNS(null,"fill-opacity", "0.99")
-   Root.appendChild(dot)
+function drawDot(target) {
+    var node = d3.select(target)
+    var x0 = +node.attr("xStart")
+    var y0 = +node.attr("yStart")
+
+    var dot = d3.svg.arc().outerRadius(function () { return 50 })
+
+    var svg = d3.select("svg")
+
+    svg.append("circle")
+	.attr("r", 3)
+        .attr("cx", x0)
+        .attr("cy", y0-yFactor*0.7)
+	.style("fill", "red")
+	.style("fill-opacity", "0.5")
 }
 
